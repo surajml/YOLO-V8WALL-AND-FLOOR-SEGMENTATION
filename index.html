@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Segmented Image</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Segmented Image</h1>
+        <div class="row">
+            <!-- Thumbnail buttons -->
+            <div class="col-sm-6 col-md-3">
+                <img class="img-thumbnail"
+                    src="https://quleeptest.s3.ap-south-1.amazonaws.com/12D38B33FE/81273-1%20%28CA02-1%29_icon_256x256.png"
+                    alt="Image 1" data-texture-url="https://quleeptest.s3.ap-south-1.amazonaws.com/12D38B33FE/81273-1%20%28CA02-1%29_icon_256x256.png">
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <img class="img-thumbnail"
+                    src="https://quleeptest.s3.ap-south-1.amazonaws.com/1EEB8B711D/81265-1%20%28CA15-1%29_icon_256x256.png"
+                    alt="Image 2" data-texture-url="https://quleeptest.s3.ap-south-1.amazonaws.com/1EEB8B711D/81265-1%20%28CA15-1%29_icon_256x256.png">
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <img class="img-thumbnail"
+                    src="https://quleeptest.s3.ap-south-1.amazonaws.com/395C70C507/81270-8%20%28CA01-8%29_icon_256x256.png"
+                    alt="Image 3" data-texture-url="https://quleeptest.s3.ap-south-1.amazonaws.com/395C70C507/81270-8%20%28CA01-8%29_icon_256x256.png">
+            </div>
+            <div class="col-sm-6 col-md-3">
+                <img class="img-thumbnail"
+                    src="https://quleeptest.s3.ap-south-1.amazonaws.com/A080CED26C/81267-4%20%28CA11-2%29_wallpaper_480x640.png"
+                    alt="Image 4" data-texture-url="https://quleeptest.s3.ap-south-1.amazonaws.com/A080CED26C/81267-4%20%28CA11-2%29_wallpaper_480x640.png">
+            </div>
+        </div>
+        <form id="segment-form">
+            <div class="form-group">
+                <label for="texture-url">Texture Image URL:</label>
+                <input type="text" class="form-control" id="texture-url" required>
+            </div>
+            <div class="form-group">
+                <label for="image-file">Image File:</label>
+                <input type="file" class="form-control-file" id="image-file" accept="image/*" required>
+            </div>
+            <div class="form-group">
+                <label for="segment-option">Segment Option:</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="segment-option" id="segment-floor" value="floor" checked>
+                    <label class="form-check-label" for="segment-floor">
+                        Segment Floor
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="segment-option" id="segment-wall" value="wall">
+                    <label class="form-check-label" for="segment-wall">
+                        Segment Wall
+                    </label>
+                </div>
+            </div>
+            <div id="processing" style="display: none;">
+                <p>Processing...</p>
+                <div class="spinner-border" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Segment Image</button>
+        </form>
+        <div id="segmented-img-container" class="mt-5 d-none">
+            <h2>Segmented Image:</h2>
+            <img id="segmented-img" src="" alt="Segmented Image">
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $(".img-thumbnail").click(function() {
+                var textureUrl = $(this).data("texture-url");
+                $("#texture-url").val(textureUrl).trigger('input');
+            });
+
+            $("#segment-form").submit(function(e) {
+                e.preventDefault();
+                $("#processing").show(); // show processing animation
+                var textureUrl = $("#texture-url").val();
+                var imageData = new FormData();
+                imageData.append('image', $('#image-file')[0].files[0]);
+                imageData.append('texture_url', textureUrl);
+
+                var segmentOption = $("input[name='segment-option']:checked").val();
+                imageData.append('segmentation_option', segmentOption);
+
+                $.ajax({
+                    type: "POST",
+                    url: "http://127.0.0.1:5000/",
+                    data: imageData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        var segmentedImageUrl = response.segmented_image;
+                        $("#segmented-img").attr("src", "data:image/jpeg;base64," + segmentedImageUrl);
+                        $("#segmented-img-container").removeClass("d-none");
+                        $("#processing").hide(); // hide processing animation
+                    },
+                    error: function(xhr, status, error) {
+                        console.log(xhr.responseText);
+                        $("#processing").hide(); // hide processing animation
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
